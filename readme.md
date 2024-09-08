@@ -33,7 +33,7 @@ You should go to your github account and create a classic repo token.
 
 ## Project url
 - [github-activity](https://roadmap.sh/projects/github-user-activity)
-- [replit-github-activity](TODO_URL)
+- [replit-github-activity](https://replit.com/@glaw14/github-user-activity)
 
 ## Contributing
 If you would like to contribute to this project, please follow these steps:
