@@ -1,9 +1,29 @@
+from datetime import timedelta, datetime
 import os
 import sys
 import http.client
 import json
 
+CACHE_EXPIRATION_TIME = timedelta(minutes=10)
+CACHE_DIR = "users_cache"
 
+def save_cache(username, data):
+    cache_file = (f"{CACHE_DIR}/.cache_{username}.json")
+    with open(cache_file, 'w') as file:
+        json.dump({"timestamp": datetime.now().isoformat(), "data": data}, file)
+
+def load_from_cache(username):
+    cache_file = f"{CACHE_DIR}/.cache_{username}.json"
+    if os.path.exists(cache_file):
+        with open(cache_file, 'r') as file:
+            cached_data = json.load(file)
+            cache_time = datetime.fromisoformat(cached_data["timestamp"])
+            if datetime.now() - cache_time < CACHE_EXPIRATION_TIME:
+                return cached_data["data"]
+            else:
+                print("Cache expired.")
+    return None
+     
 def display_events(events):
     
     if not events:
@@ -43,6 +63,12 @@ def decode_response(data):
 
 # https://api.github.com/users/ckomalram/events
 def execute_api(username):
+
+    cached_data = load_from_cache(username)
+    if cached_data:
+        print("Using cached data...")
+        return cached_data
+
     conn = http.client.HTTPSConnection("api.github.com")
     endpoint = f"/users/{username}/events"
     github_token = os.getenv("GITHUB_TOKEN") #change every 30 days from github account
@@ -71,6 +97,7 @@ def execute_api(username):
             return []    
 
         events = decode_response(data)    
+        save_cache(username, events)
 
     except http.client.HTTPException as http_error:
         print(f"An Http Error ocurred: {http_error}")
@@ -95,7 +122,6 @@ def run():
     events = execute_api(username)
     if event_type:
         events = [event for event in events if event.get("type") == event_type]
-        # print(events)
         print(f"Filtered events by type: {event_type}")
     
     display_events(events)
